@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{--sand:#f5efe6;--ocean:#1a6b8a;--coral:#d4614a;--gold:#c9973a;--dark:#1c2b35;--muted:#7a8e97;--green:#2e8a4a;--purple:#6d4a9c;--teal:#1a8a7a;--loc:#b5500a;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -107,6 +109,15 @@ input[type=text]:focus{border-color:var(--ocean);}
 .legend span{display:flex;align-items:center;gap:.2rem;}
 
 footer{text-align:center;padding:1.6rem;color:var(--muted);font-size:.74rem;border-top:1px solid #e0ddd8;margin-top:1rem;line-height:1.7;}
+#map{height:calc(100vh - 120px);min-height:520px;width:100%;}
+.mlb{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;padding:.6rem 1rem;background:white;border-bottom:1px solid #e0ddd8;font-size:.78rem;font-weight:700;}
+.mlb span{display:flex;align-items:center;gap:.35rem;}
+.ld{width:13px;height:13px;border-radius:50%;display:inline-block;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+.leaflet-popup-content{margin:10px 14px!important;font-family:Lato,sans-serif;}
+.pn{font-size:.92rem;font-weight:700;color:#1c2b35;margin-bottom:.2rem;}
+.pt{font-size:.7rem;color:#7a8e97;margin-bottom:.25rem;}
+.pd{font-size:.73rem;font-weight:700;color:#2e8a4a;margin-bottom:.3rem;}
+.pdir{display:inline-block;margin-top:.25rem;background:#1a6b8a;color:white;text-decoration:none;font-size:.71rem;font-weight:700;padding:.2rem .55rem;border-radius:6px;}
 </style>
 </head>
 <body>
@@ -121,6 +132,7 @@ footer{text-align:center;padding:1.6rem;color:var(--muted);font-size:.74rem;bord
 <div class="main-tabs">
   <button class="main-tab active" onclick="switchMain('restaurants',this)">🍽️ Restaurants (36)</button>
   <button class="main-tab" onclick="switchMain('activities',this)">🎡 Activities (15)</button>
+  <button class="main-tab" onclick="switchMain('map',this)">🗺️ Map</button>
 </div>
 
 <div class="legend">
@@ -217,6 +229,7 @@ footer{text-align:center;padding:1.6rem;color:var(--muted);font-size:.74rem;bord
   <div class="grid" id="a-grid"></div>
 </div>
 
+<div id="sec-map" class="sec-hidden"><div class="mlb"><span><span class="ld" style="background:#c9973a"></span>🏠 South Hampton</span><span><span class="ld" style="background:#1a6b8a"></span>🍽️ Restaurant</span><span><span class="ld" style="background:#d4614a"></span>🎡 Activity</span><span style="color:#7a8e97;font-weight:400">· Click any pin for details &amp; directions</span></div><div id="map"></div></div>
 <footer>Sorted nearest → farthest from 9820 Queensway Blvd (Kingston Plantation, Myrtle Beach SC).<br>Distances are driving estimates unless noted. Walkability considers road safety &amp; sidewalks.<br>Ratings from TripAdvisor, Google &amp; Yelp. Prices approximate — verify before visiting.</footer>
 
 <script>
@@ -399,11 +412,77 @@ function sfLoc(t,val,btn){
   render(t);
 }
 
+let _mr=false;
 function switchMain(tab,btn){
   document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('sec-restaurants').classList.toggle('sec-hidden',tab!=='restaurants');
-  document.getElementById('sec-activities').classList.toggle('sec-hidden',tab!=='activities');
+  ['restaurants','activities','map'].forEach(s=>document.getElementById('sec-'+s).classList.toggle('sec-hidden',tab!==s));
+  if(tab==='map'&&!_mr){_im();_mr=true;}
+}
+function _im(){
+  const O='9820+Queensway+Blvd,+Myrtle+Beach,+SC+29572';
+  const gl=d=>'https://www.google.com/maps/dir/'+O+'/'+encodeURIComponent(d).replace(/%20/g,'+');
+  const m=L.map('map').setView([33.735,-78.83],11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(m);
+  function pi(c,e){return L.divIcon({className:'',html:'<div style="background:'+c+';width:32px;height:32px;border-radius:50%;border:2.5px solid white;box-shadow:0 2px 7px rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;font-size:13px">'+e+'</div>',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]});}
+  const HP=L.divIcon({className:'',html:'<div style="background:#c9973a;width:40px;height:40px;border-radius:50%;border:3px solid #1c2b35;box-shadow:0 3px 10px rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;font-size:18px">🏠</div>',iconSize:[40,40],iconAnchor:[20,20],popupAnchor:[0,-24]});
+  L.marker([33.7677,-78.7771],{icon:HP}).addTo(m).bindPopup('<div class="pn">🏠 South Hampton (Home Base)</div><div class="pt">9820 Queensway Blvd, Kingston Plantation</div>');
+  const RP=pi('#1a6b8a','🍽️'),AP=pi('#d4614a','🎡');
+  [[33.7736,-78.7801,"Spanky's Pub House",".1 mi · Walkable","Spanky's Pub House, 9776 Kings Rd, Myrtle Beach, SC"],
+   [33.7790,-78.7934,"Chuck's Steak House",".3 mi · $$$","Chuck's Steak House, 9695 N Kings Hwy, Myrtle Beach, SC"],
+   [33.7627,-78.7809,"Groupers at the Pier",".5 mi · Beach walk","Apache Pier, 9700 Kings Rd, Myrtle Beach, SC"],
+   [33.7775,-78.7909,"Bimini's Oyster Bar",".8 mi · $$ Seafood","Bimini's Oyster Bar, 930 Lake Arrowhead Rd, Myrtle Beach, SC"],
+   [33.7280,-78.8500,"Carolina Seafood & Steaks","1.2 mi · $$","Carolina Seafood and Steaks, Myrtle Beach, SC"],
+   [33.7214,-78.8498,"Carolina Roadhouse","1.5 mi · $$ Steaks","Carolina Roadhouse, 4617 N Kings Hwy, Myrtle Beach, SC"],
+   [33.8073,-78.7009,"Molly Darcy's","2.0 mi · Irish Pub","Molly Darcy's Irish Pub, 1701 S Ocean Blvd, North Myrtle Beach, SC"],
+   [33.7954,-78.7420,"21 Main Prime Steakhouse","2.1 mi · $$$$","21 Main Prime Steakhouse, 719 N Beach Blvd, North Myrtle Beach, SC"],
+   [33.8109,-78.7082,"Bar 19 Twelve","2.5 mi · $$$","Bar 19 Twelve, 1912 Hwy 17 S, North Myrtle Beach, SC"],
+   [33.8423,-78.6680,"Local Bar & Kitchen","3.0 mi · Intracoastal","Local on the Water, North Myrtle Beach, SC"],
+   [33.7981,-78.7450,"Blueberry's Grill","3.5 mi · Brunch","Blueberry's Grill, 4856 Hwy 17 S, North Myrtle Beach, SC"],
+   [33.8417,-78.6671,"Boardwalk Billy's","3.5 mi · Barefoot Landing","Boardwalk Billy's, Barefoot Landing, North Myrtle Beach, SC"],
+   [33.7994,-78.7467,"Crooked Hammock Brewery","3.5 mi · Brewery","Crooked Hammock Brewery, Barefoot Landing, North Myrtle Beach, SC"],
+   [33.8005,-78.7465,"LuLu's","3.5 mi · Barefoot Landing","Lulu's Barefoot Landing, North Myrtle Beach, SC"],
+   [33.8002,-78.7460,"Taco Mundo","3.5 mi · Mexican","Taco Mundo, Barefoot Landing, North Myrtle Beach, SC"],
+   [33.7500,-78.8200,"The Hangout","3.8 mi","The Hangout, Myrtle Beach, SC"],
+   [33.8221,-78.6743,"Hoskins Restaurant","4.0 mi · Since 1948","Hoskins Restaurant, 405 Main St, North Myrtle Beach, SC"],
+   [33.7581,-78.8549,"SoHo Steak/Seafood/Sushi","4.0 mi · $$$","SoHo Steak Seafood Sushi, Myrtle Beach, SC"],
+   [33.7550,-78.8450,"Voodoo Brewing Co.","4.5 mi · Craft Beer","Voodoo Brewing, Myrtle Beach, SC"],
+   [33.7621,-78.7873,"Flip Flops Bar & Grill","5.0 mi","Flip Flops Bar and Grill, North Myrtle Beach, SC"],
+   [33.7300,-78.8400,"Gio's Italian Kitchen","5.0 mi · Italian","Gio's Italian Kitchen, Myrtle Beach, SC"],
+   [33.7508,-78.8133,"Croissants Bistro & Bakery","5.5 mi · Bistro","Croissants Bistro and Bakery, Myrtle Beach, SC"],
+   [33.7123,-78.8607,"Johnny D's Waffles","5.5 mi · Breakfast","Johnny D's Waffles, 3301 N Kings Hwy, Myrtle Beach, SC"],
+   [33.7644,-78.8086,"Pirates Voyage Dinner & Show","6.0 mi · Dinner Show","Pirates Voyage, 8907 N Kings Hwy, Myrtle Beach, SC"],
+   [33.7083,-78.8604,"Sea Captain's House","6.5 mi · Oceanfront","Sea Captain's House, 3002 N Ocean Blvd, Myrtle Beach, SC"],
+   [33.7000,-78.8709,"Bummz Beach Cafe","7.5 mi · Oceanfront","Bummz Beach Cafe, 2002 N Ocean Blvd, Myrtle Beach, SC"],
+   [33.7200,-78.8600,"Bar-B-Que House","8.0 mi · BBQ","Bar-B-Que House, Myrtle Beach, SC"],
+   [33.7197,-78.8783,"Rioz Brazilian Steakhouse","8.0 mi · Churrascaria","Rioz Brazilian Steakhouse, 2920 Hollywood Dr, Myrtle Beach, SC"],
+   [33.7162,-78.8834,"Grumpy Monk","9.0 mi · Craft Beer","The Grumpy Monk, Myrtle Beach, SC"],
+   [33.6949,-78.8762,"Riptydz","10.5 mi · Boardwalk","RipTydz, 1210 N Ocean Blvd, Myrtle Beach, SC"],
+   [33.6947,-78.8752,"Pier 14","10.5 mi · Oceanfront","Pier 14, 1306 N Ocean Blvd, Myrtle Beach, SC"],
+   [33.6922,-78.8795,"Peaches Corner","10.5 mi · Boardwalk","Peaches Corner, 900 N Ocean Blvd, Myrtle Beach, SC"],
+   [33.7157,-78.8819,"Landry's Seafood House","11.0 mi · Broadway","Landry's Seafood House, Broadway at the Beach, Myrtle Beach, SC"],
+   [33.6691,-78.9406,"Nacho Hippo (Market Common)","13.0 mi · Mexican","Nacho Hippo, 1160 Farrow Pkwy, Myrtle Beach, SC"],
+   [33.5580,-79.0310,"Brown Box Coffee Fox","18 mi · Coffee","Brown Box Coffee, Murrells Inlet, SC"],
+   [33.5557,-79.0330,"Wicked Tuna Sushi","20 mi · Murrells Inlet","Wicked Tuna, 4123 Hwy 17 Business, Murrells Inlet, SC"],
+   [33.5564,-79.0302,"Marshwalk (Murrells Inlet)","20 mi · Waterfront","Murrells Inlet MarshWalk, Murrells Inlet, SC"]
+  ].forEach(r=>L.marker([r[0],r[1]],{icon:RP}).addTo(m).bindPopup('<div class="pn">'+r[2]+'</div><div class="pt">🍽️ Restaurant</div><div class="pd">📍 '+r[3]+'</div><a class="pdir" href="'+gl(r[4])+'" target="_blank">🗺️ Get Directions</a>'));
+  [[33.7640,-78.7750,"Beach (Kingston Plantation)","Steps away · Free","Kingston Plantation Beach, Myrtle Beach, SC"],
+   [33.7996,-78.7373,"Alligator Adventure","3.5 mi · $27-37","Alligator Adventure, 4604 Hwy 17 S, North Myrtle Beach, SC"],
+   [33.8000,-78.7428,"Barefoot Landing","3.5 mi · Free entry","Barefoot Landing, 4898 Hwy 17 S, North Myrtle Beach, SC"],
+   [33.5570,-79.0310,"Dolphin Excursion Tour","8-12 mi · $25-40","Captain Dick's Marina, Murrells Inlet, SC"],
+   [33.7100,-78.8800,"Mini Golf","4-10 mi · $10-15","Hawaiian Rumble Mini Golf, Myrtle Beach, SC"],
+   [33.7200,-78.8780,"810 Bowling & Billiards","8 mi · $5-8","810 Billiards and Bowling, Myrtle Beach, SC"],
+   [33.7156,-78.8819,"Broadway at the Beach","10.5 mi · Free","Broadway at the Beach, 1325 Celebrity Cir, Myrtle Beach, SC"],
+   [33.7157,-78.8778,"Ripley's Aquarium","10.5 mi · $27-43","Ripley's Aquarium, 1110 Celebrity Cir, Myrtle Beach, SC"],
+   [33.7168,-78.8843,"WonderWorks","10.5 mi · $25-32","WonderWorks, 1313 Celebrity Cir, Myrtle Beach, SC"],
+   [33.6895,-78.8815,"Myrtle Beach Boardwalk","10.5 mi · Free","Myrtle Beach Boardwalk, 1200 N Ocean Blvd, Myrtle Beach, SC"],
+   [33.6572,-78.9186,"Springmaid Pier","7.0 mi · ~$12","Springmaid Pier, 3200 S Ocean Blvd, Myrtle Beach, SC"],
+   [33.6820,-78.8903,"Family Kingdom Amusement Park","11 mi · $25-35","Family Kingdom Amusement Park, 300 S Ocean Blvd, Myrtle Beach, SC"],
+   [33.6512,-78.9306,"Myrtle Beach State Park","11 mi · $8/vehicle","Myrtle Beach State Park, 4401 S Kings Hwy, Myrtle Beach, SC"],
+   [33.5564,-79.0302,"Murrells Inlet MarshWalk","20 mi · Free","Murrells Inlet MarshWalk, 4123 Business 17, Murrells Inlet, SC"],
+   [33.5306,-79.0813,"Brookgreen Gardens & Zoo","22 mi · $22/adult","Brookgreen Gardens, 1931 Brookgreen Dr, Murrells Inlet, SC"]
+  ].forEach(a=>L.marker([a[0],a[1]],{icon:AP}).addTo(m).bindPopup('<div class="pn">'+a[2]+'</div><div class="pt">🎡 Activity</div><div class="pd">📍 '+a[3]+'</div><a class="pdir" href="'+gl(a[4])+'" target="_blank">🗺️ Get Directions</a>'));
+  setTimeout(()=>m.invalidateSize(),200);
 }
 
 renderR();renderA();
